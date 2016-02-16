@@ -9,6 +9,21 @@ NESH will complement and not replace the social care for the elderly by letting 
 #About this project
 This repository is for my attempt at "World’s Largest Arduino Maker Challenge",  https://www.hackster.io/challenges/arduino-microsoft-maker
 
+##Getting the Arduino connected to host PC
+Follow the steps below to get your Arduino device connected to your host PC, ready to code!
+The raw StandardFirmata sketch works for USB and Bluetooth, while modified versions are available for WiFi and Ethernet.
+Follow the steps below to upload the StandardFirmata sketch to your Arduino.
+
+1. Download and install the Arduino software from [http://arduino.cc](http://arduino.cc).
+2. Connect your Arduino device to the computer using USB. 
+3. Launch the Arduino application.
+4. Verify that you have the correct Arduino board selected under *Tools > Board*
+5. Verify that you have the correct COM Port selected under *Tools > Port*
+6. In the Arduino IDE, navigate to *File > Examples > Firmata > StandardFirmata*
+7. Verify that StandardFirmata will use the correct baud rate for your connection (see Notes on Serial Commuinication below)
+8. Press “Upload” to deploy the StandardFirmata sketch to the Arduino device.
+
+
 # Useful links
 
 Arduino MKR1000 (US only)/Genuino MKR1000 (Outside US), https://www.arduino.cc/en/Main/ArduinoMKR1000
