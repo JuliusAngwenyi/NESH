@@ -24,6 +24,13 @@ Follow the steps below to upload the StandardFirmata sketch to your Arduino.
 8. Press “Upload” to deploy the StandardFirmata sketch to the Arduino device.
 
 
+##Story boads and screen shots
+1. Firmware update
+![Firmware update](https://raw.githubusercontent.com/JuliusAngwenyi/NESH/master/ProofOfConceptNesh/ProofOfConceptNesh/Assets/1.%20Firmware%20Updater%20for%20WiFi101.PNG)
+2. Https certification into Arduino
+![Https certification into Arduino](https://raw.githubusercontent.com/JuliusAngwenyi/NESH/master/ProofOfConceptNesh/ProofOfConceptNesh/Assets/2.%20Upload%20cert%20to%20Arduino%20WiFi101.PNG)
+
+
 # Useful links
 
 Arduino MKR1000 (US only)/Genuino MKR1000 (Outside US), https://www.arduino.cc/en/Main/ArduinoMKR1000
