@@ -29,7 +29,7 @@ namespace ReadDeviceToCloudMessages
 
         private async static Task ReceiveMessagesFromDeviceAsync(string partition)
         {
-            var eventHubReceiver = eventHubClient.GetDefaultConsumerGroup().CreateReceiver(partition);//, DateTime.UtcNow); //To get all messages
+            var eventHubReceiver = eventHubClient.GetDefaultConsumerGroup().CreateReceiver(partition, DateTime.UtcNow); //To get all messages
             while (true)
             {
                 EventData eventData = await eventHubReceiver.ReceiveAsync();

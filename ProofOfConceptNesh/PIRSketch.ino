@@ -35,6 +35,7 @@ char authSAS[] = "YourSharedAccessSignature";
 unsigned long lastConnectionTime = 0;            
 const unsigned long pollingInterval = 5L * 1000L; // 5 sec polling delay, in milliseconds
 
+
 int status = WL_IDLE_STATUS;
 
 WiFiSSLClient client;
@@ -43,7 +44,7 @@ void setup() {
 
    pinMode(MKR1000_LED, OUTPUT);
 
-   pinMode(MKR1000_PIN_PIR, INPUT);     // declare sensor as input
+   pinMode(MKR1000_PINPIR1, INPUT);     // declare sensor as input
     
   //check for the presence of the shield:
   if (WiFi.status() == WL_NO_SHIELD) {
@@ -155,14 +156,14 @@ void azureHttpPost(String content) {
 }
 
 void loop(){
-  val = digitalRead(MKR1000_PIN_PIR);  // read input value
+  val = digitalRead(MKR1000_PINPIR1);  // read input value
   if (val == HIGH) {            // check if the input is HIGH
     digitalWrite(MKR1000_LED, HIGH);  // turn LED ON
     delay(150);
     
     if (pirState == LOW) {
       // we have just turned on
-      azureHttpPost("{deviceId:NeshMKR100Dev1, motion:1,Timestamp:2016-02-25}");
+      azureHttpPost("{deviceId:NeshMKR100Dev1, motion:1}");
       Serial.println("Motion detected!");
       // We only want to print on the output change, not state
       pirState = HIGH;
@@ -172,6 +173,7 @@ void loop(){
       delay(300);    
       if (pirState == HIGH){
       // we have just turned off
+      azureHttpPost("{deviceId:NeshMKR100Dev1, motion:0}");
       Serial.println("Motion ended!");
       // We only want to print on the output change, not state
       pirState = LOW;
