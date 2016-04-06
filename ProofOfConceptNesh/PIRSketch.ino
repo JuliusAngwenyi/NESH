@@ -1,22 +1,22 @@
 /*
-This code connects to Azure IoT Hub and blinks the onboard LED on the MKR1000
-when there is a message for the particular device.
-
-Written by Mohan Palanisamy (http://mohanp.com)
-
-Instructions are here to properly set up the MKR1000 for SSL connections.
-http://mohanp.com/mkr1000-azure-iot-hub-how-to/
-Feb 19, 2016
+This code connects to Azure IoT Hub.
+Some logic has been adapted from Mohan Palanisamy (http://mohanp.com) 
 */
 
 #include <SPI.h>
 #include <WiFi101.h>
 
+///*** PINs Config ***///
 const int MKR1000_LED = 6 ;
 const int  MKR1000_PINPIR1 = 14;               // choose the input pin (for PIR sensor)
-int pirState = LOW;             // we start, assuming no motion detected
-int val = 0;                    // variable for reading the pin status
 
+
+int val = 0;                    // variable for reading the pin status
+long unsigned int lowIn;         //the time when the sensor outputs a low impulse
+long unsigned int pause = 5000;  //the amount of milliseconds the sensor has to be low before we assume all motion has stopped
+boolean lockLow = true;
+boolean takeLowTime;  
+String duration ="0";
 
 ///*** WiFi Network Config ***///
 char ssid[] = "YourWifiSSID"; //  your network SSID (name)
@@ -34,7 +34,6 @@ char authSAS[] = "YourSharedAccessSignature";
 
 unsigned long lastConnectionTime = 0;            
 const unsigned long pollingInterval = 5L * 1000L; // 5 sec polling delay, in milliseconds
-
 
 int status = WL_IDLE_STATUS;
 
@@ -55,11 +54,11 @@ void setup() {
   // attempt to connect to Wifi network:
   while (status != WL_CONNECTED) {
     status = WiFi.begin(ssid, pass);
+    Serial.println("wait 10 seconds for wifi connection:");
     // wait 10 seconds for connection:
-	Serial.println("wait 10 seconds for connection");
     delay(10000);
   }
-  Serial.println("connection succeeded");
+  Serial.println("wifi connection succeeded:");
 }
 
 void azureMessageloop() 
@@ -89,8 +88,7 @@ void azureMessageloop()
 
   // polling..if pollingInterval has passed
   if (millis() - lastConnectionTime > pollingInterval) {
-    digitalWrite(MKR1000_LED, LOW);
-    //detectMotion();
+    digitalWrite(MKR1000_LED, LOW);   
   }
 }
 
@@ -119,7 +117,7 @@ void azureHttpRequest() {
   }
   else {
     // if you couldn't make a connection:
-    Serial.println("connection failed");
+    Serial.println("connection to azure webservice failed");
   }
 }
 
@@ -153,32 +151,48 @@ void azureHttpPost(String content) {
   }
   else {
     // if you couldn't make a connection:
-    Serial.println("connection failed");
+    Serial.println("connection to azure webservice failed");
   }
 }
 
 void loop(){
-  val = digitalRead(MKR1000_PINPIR1);  // read input value
-  if (val == HIGH) {            // check if the input is HIGH
-    digitalWrite(MKR1000_LED, HIGH);  // turn LED ON
-    delay(150);
-    
-    if (pirState == LOW) {
-      // we have just turned on
-      azureHttpPost("{deviceId:NeshMKR100Dev1, motion:1}");
-      Serial.println("Motion detected!");
-      // We only want to print on the output change, not state
-      pirState = HIGH;
+  val = digitalRead(MKR1000_PINPIR1);   // read input value
+  if (val == HIGH) {                    // check if the input is HIGH
+    digitalWrite(MKR1000_LED, HIGH);    // turn LED ON
+    //delay(150);
+
+    if (lockLow) {           
+         lockLow = false;               //makes sure we wait for a transition to LOW before any further output is made:
+         duration = millis()/1000;
+         Serial.println("---");
+         Serial.print("motion detected at ");
+         Serial.print(duration);
+         Serial.println(" sec");                 
+         
+         azureHttpPost("{deviceId:NeshMKR100Dev1, motion:1,elapsed:"+ duration + "}");
     }
-  } else {
-      digitalWrite(MKR1000_LED, LOW); // turn LED OFF
-      delay(300);    
-      if (pirState == HIGH){
-      // we have just turned off
-      azureHttpPost("{deviceId:NeshMKR100Dev1, motion:0}");
-      Serial.println("Motion ended!");
-      // We only want to print on the output change, not state
-      pirState = LOW;
+    
+    takeLowTime = true;
+  } 
+  else {
+      digitalWrite(MKR1000_LED, LOW);   // turn LED OFF
+      //delay(150);    
+
+       if(takeLowTime){
+          lowIn = millis();             //save the time of the transition from high to LOW
+          takeLowTime = false;          //make sure this is only done at the start of a LOW phase
+        }    
+
+       //if the sensor is low for more than the given pause, we assume that no more motion is going to happen
+       if(!lockLow && millis() - lowIn > pause){  
+           //makes sure this block of code is only executed again after a new motion sequence has been detected
+           lockLow = true;        
+           duration = (millis() - pause)/1000;              
+           Serial.print("motion ended at ");      //output
+           Serial.print(duration);
+           Serial.println(" sec");    
+           
+          azureHttpPost("{deviceId:NeshMKR100Dev1, motion:0,elapsed:"+ duration + "}");  
     }
   }
 }
