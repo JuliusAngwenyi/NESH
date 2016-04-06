@@ -18,6 +18,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ArduinoSketches", "ArduinoS
 		PIRSketch.ino = PIRSketch.ino
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "StandardFirmataWiFi", "StandardFirmataWiFi", "{F55729CC-A14E-4BC3-ACBB-6D9A01F4F0BE}"
+	ProjectSection(SolutionItems) = preProject
+		Sketches\StandardFirmataWiFi\StandardFirmataWiFi.ino = Sketches\StandardFirmataWiFi\StandardFirmataWiFi.ino
+		Sketches\StandardFirmataWiFi\wifiConfig.h = Sketches\StandardFirmataWiFi\wifiConfig.h
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -111,5 +117,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F55729CC-A14E-4BC3-ACBB-6D9A01F4F0BE} = {7DBCC90E-BF8C-444E-808A-0AEA72F01154}
 	EndGlobalSection
 EndGlobal

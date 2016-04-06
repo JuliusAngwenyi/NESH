@@ -13,7 +13,7 @@ Feb 19, 2016
 #include <WiFi101.h>
 
 const int MKR1000_LED = 6 ;
-const int  MKR1000_PIN_PIR = 14;               // choose the input pin (for PIR sensor)
+const int  MKR1000_PINPIR1 = 14;               // choose the input pin (for PIR sensor)
 int pirState = LOW;             // we start, assuming no motion detected
 int val = 0;                    // variable for reading the pin status
 
@@ -56,8 +56,10 @@ void setup() {
   while (status != WL_CONNECTED) {
     status = WiFi.begin(ssid, pass);
     // wait 10 seconds for connection:
+	Serial.println("wait 10 seconds for connection");
     delay(10000);
   }
+  Serial.println("connection succeeded");
 }
 
 void azureMessageloop() 
