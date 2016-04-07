@@ -11,6 +11,8 @@ const int MKR1000_LED = 6 ;
 const int  MKR1000_PINPIR1 = 14;               // choose the input pin (for PIR sensor)
 
 
+
+int calibrationTime = 30;       //the time we give the sensor to calibrate (10-60 secs according to the datasheet)
 int val = 0;                    // variable for reading the pin status
 long unsigned int lowIn;         //the time when the sensor outputs a low impulse
 long unsigned int pause = 5000;  //the amount of milliseconds the sensor has to be low before we assume all motion has stopped
@@ -44,12 +46,26 @@ void setup() {
    pinMode(MKR1000_LED, OUTPUT);
 
    pinMode(MKR1000_PINPIR1, INPUT);     // declare sensor as input
+
     
+  //give the sensor some time to calibrate
+  delay(50);
+  Serial.print("calibrating sensor ");
+    for(int i = 0; i < calibrationTime; i++){
+      Serial.print(".");
+      delay(1000);
+      }
+    Serial.println(" done");
+    Serial.println("SENSOR ACTIVE");
+    delay(50);
+
+    Serial.print("check for the presence of the shield");
   //check for the presence of the shield:
   if (WiFi.status() == WL_NO_SHIELD) {
     // don't continue:
     while (true);
   }
+   Serial.print("Good. this board supports Wifi!");
 
   // attempt to connect to Wifi network:
   while (status != WL_CONNECTED) {
@@ -158,8 +174,7 @@ void azureHttpPost(String content) {
 void loop(){
   val = digitalRead(MKR1000_PINPIR1);   // read input value
   if (val == HIGH) {                    // check if the input is HIGH
-    digitalWrite(MKR1000_LED, HIGH);    // turn LED ON
-    //delay(150);
+    digitalWrite(MKR1000_LED, HIGH);    // turn LED ON    
 
     if (lockLow) {           
          lockLow = false;               //makes sure we wait for a transition to LOW before any further output is made:
@@ -168,15 +183,14 @@ void loop(){
          Serial.print("motion detected at ");
          Serial.print(duration);
          Serial.println(" sec");                 
-         
+         delay(50);
          azureHttpPost("{deviceId:NeshMKR100Dev1, motion:1,elapsed:"+ duration + "}");
     }
     
     takeLowTime = true;
   } 
   else {
-      digitalWrite(MKR1000_LED, LOW);   // turn LED OFF
-      //delay(150);    
+      digitalWrite(MKR1000_LED, LOW);   // turn LED OFF     
 
        if(takeLowTime){
           lowIn = millis();             //save the time of the transition from high to LOW
@@ -191,7 +205,7 @@ void loop(){
            Serial.print("motion ended at ");      //output
            Serial.print(duration);
            Serial.println(" sec");    
-           
+           delay(50);
           azureHttpPost("{deviceId:NeshMKR100Dev1, motion:0,elapsed:"+ duration + "}");  
     }
   }
