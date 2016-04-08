@@ -19,6 +19,7 @@ long unsigned int pause = 5000;  //the amount of milliseconds the sensor has to 
 boolean lockLow = true;
 boolean takeLowTime;  
 String duration ="0";
+boolean webServiceSucceeded;
 
 ///*** WiFi Network Config ***///
 char ssid[] = "YourWifiSSID"; //  your network SSID (name)
@@ -59,13 +60,13 @@ void setup() {
     Serial.println("SENSOR ACTIVE");
     delay(50);
 
-    Serial.print("check for the presence of the shield");
+    Serial.println("check for the presence of the shield");
   //check for the presence of the shield:
   if (WiFi.status() == WL_NO_SHIELD) {
     // don't continue:
     while (true);
   }
-   Serial.print("Good. this board supports Wifi!");
+   Serial.println("Good. this board supports Wifi!");
 
   // attempt to connect to Wifi network:
   while (status != WL_CONNECTED) {
@@ -138,7 +139,7 @@ void azureHttpRequest() {
 }
 
 // this method makes an HTTPS connection to the Azure IOT Hub Server:
-void azureHttpPost(String content) {
+boolean azureHttpPost(String content) {
 
   // close any connection before send a new request.
   // This will free the socket on the WiFi shield
@@ -164,10 +165,13 @@ void azureHttpPost(String content) {
 
     // note the time that the connection was made:
     lastConnectionTime = millis();
+    return true;
   }
   else {
     // if you couldn't make a connection:
     Serial.println("connection to azure webservice failed");
+    reconnetWifi();
+    return false;
   }
 }
 
@@ -184,7 +188,12 @@ void loop(){
          Serial.print(duration);
          Serial.println(" sec");                 
          delay(50);
-         azureHttpPost("{deviceId:NeshMKR100Dev1, motion:1,elapsed:"+ duration + "}");
+         webServiceSucceeded = azureHttpPost("{deviceId:NeshMKR100Dev1, motion:1,elapsed:"+ duration + "}");
+         if(webServiceSucceeded == false)
+         {
+            Serial.println("retrying webservice call ");
+            azureHttpPost("{deviceId:NeshMKR100Dev1, motion:1,elapsed:"+ duration + "}");
+         }
     }
     
     takeLowTime = true;
@@ -206,7 +215,24 @@ void loop(){
            Serial.print(duration);
            Serial.println(" sec");    
            delay(50);
-          azureHttpPost("{deviceId:NeshMKR100Dev1, motion:0,elapsed:"+ duration + "}");  
+          webServiceSucceeded = azureHttpPost("{deviceId:NeshMKR100Dev1, motion:0,elapsed:"+ duration + "}");  
+          if(webServiceSucceeded == false)
+         {
+            Serial.println("retrying webservice call ");
+            azureHttpPost("{deviceId:NeshMKR100Dev1, motion:0,elapsed:"+ duration + "}");  
+         }
     }
   }
 }
+
+void reconnetWifi(){
+    // attempt to connect to Wifi network:
+  while (status != WL_CONNECTED) {
+    status = WiFi.begin(ssid, pass);
+    Serial.println("wait 10 seconds for wifi connection:");
+    // wait 10 seconds for connection:
+    delay(10000);
+  }
+  Serial.println("wifi connection succeeded:");
+}
+
