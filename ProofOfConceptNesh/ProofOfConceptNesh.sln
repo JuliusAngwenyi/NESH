@@ -15,6 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadDeviceToCloudMessages",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ArduinoSketches", "ArduinoSketches", "{7DBCC90E-BF8C-444E-808A-0AEA72F01154}"
 	ProjectSection(SolutionItems) = preProject
+		DateTime.ino = DateTime.ino
 		PIRSketch.ino = PIRSketch.ino
 	EndProjectSection
 EndProject
