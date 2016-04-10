@@ -17,6 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ArduinoSketches", "ArduinoS
 	ProjectSection(SolutionItems) = preProject
 		DateTime.ino = DateTime.ino
 		PIRSketch.ino = PIRSketch.ino
+		PIRSketchV2.ino = PIRSketchV2.ino
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "StandardFirmataWiFi", "StandardFirmataWiFi", "{F55729CC-A14E-4BC3-ACBB-6D9A01F4F0BE}"
