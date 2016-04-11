@@ -33,7 +33,7 @@ char hostname[] = "nesh.azure-devices.net";    // host name address for your Azu
 char authSAS[] = "YourSharedAccessSignature";
 
 String azureReceive = "/devices/YourDeviceId/messages/devicebound?api-version=2016-02-03"; //feed URI
-char senduri[] = "/devices/YourDeviceId/messages/events?api-version=2016-02-03";//send URI
+String senduri = "/devices/YourDeviceId/messages/events?api-version=2016-02-03";//send URI
 
 // message Complete/Reject/Abandon URIs.  "etag" will be replaced with the message id E-Tag recieved from recieve call.
 String azureComplete = "/devices/YourDeviceId/messages/devicebound/etag?api-version=2016-02-03";         
@@ -43,11 +43,12 @@ String azureAbandon  = "/devices/YourDeviceId/messages/devicebound/etag/abandon?
 ///*** Azure IoT Hub Config ***///
 
 unsigned long lastConnectionTime = 0;            
-const unsigned long pollingInterval = 5L * 1000L; // 5 sec polling delay, in milliseconds
+const unsigned long pollingInterval = 30L * 1000L; // 5 sec polling delay, in milliseconds
 
 int status = WL_IDLE_STATUS;
 
 WiFiSSLClient client;
+WiFiSSLClient postingClient;
 
 ///*** RTCZero Config ***///
 /* Create an rtc object */
@@ -62,6 +63,8 @@ byte hours = 20;
 byte day = 10;
 byte month = 4;
 byte year = 16;
+
+String timeStamp;
 
 ///*** RTCZero Config ***///
 
@@ -114,39 +117,48 @@ boolean azureHttpPost(String content) {
 
   // close any connection before send a new request.
   // This will free the socket on the WiFi shield
-  client.stop();
+  postingClient.stop();
 
   // if there's a successful connection:
-  if (client.connect(hostname, 443)) {
+  if (postingClient.connect(hostname, 443)) {
     //make the GET request to the Azure IOT device feed uri
-    client.print("POST ");  //Do a POST
-    client.print(senduri);  // On the sendURI
-    client.println(" HTTP/1.1"); 
-    client.print("Host: "); 
-    client.println(hostname);  //with hostname header
-    client.print("Authorization: ");
-    client.println(authSAS);  //Authorization SAS token obtained from Azure IoT device explorer
-    client.println("Connection: close");
-    client.println("Content-Type: text/plain");
-    client.print("Content-Length: ");
-    client.println(content.length());
-    client.println();
-    client.println(content);
-    client.println();
+    postingClient.print("POST ");  //Do a POST
+    postingClient.print(senduri);  // On the sendURI
+    postingClient.println(" HTTP/1.1"); 
+    postingClient.print("Host: "); 
+    postingClient.println(hostname);  //with hostname header
+    postingClient.print("Authorization: ");
+    postingClient.println(authSAS);  //Authorization SAS token obtained from Azure IoT device explorer
+    postingClient.println("Connection: close");
+    postingClient.println("Content-Type: text/plain");
+    postingClient.print("Content-Length: ");
+    postingClient.println(content.length());
+    postingClient.println();
+    postingClient.println(content);
+    postingClient.println();
 
-    // note the time that the connection was made:
-    //lastConnectionTime = millis();
+    Serial.println("---"); 
+    Serial.println("service call to azure successful!");
+    Serial.println("azureHttpPost");
+    Serial.println(senduri); 
+    Serial.println(content);            
+    Serial.println("---");     
     return true;
   }
   else {
     // if you couldn't make a connection:
+    Serial.println("---"); 
     Serial.println("connection to azure webservice failed");
+    Serial.println("azureHttpPost");
+    Serial.println(senduri);
+    Serial.println(content); 
+    Serial.println("---"); 
     reconnetWifi();
     return false;
   }
 }
 
-void loop(){
+void loop(){ 
   val = digitalRead(MKR1000_PINPIR1);   // read input value
   if (val == HIGH) {                    // check if the input is HIGH
     digitalWrite(MKR1000_LED, HIGH);    // turn LED ON    
@@ -158,14 +170,24 @@ void loop(){
          Serial.print("motion detected at ");
          Serial.print(duration);
          Serial.println(" sec");                 
-         delay(50);
-         webServiceSucceeded = azureHttpPost("{deviceId:NeshMKR100Dev1, motion:1,timestamp:" + getTimeStamp() + "}");
-         //webServiceSucceeded = httpRequest("POST", senduri,"text/plain","{deviceId:NeshMKR100Dev1, motion:1,timestamp:" + getTimeStamp() + "}");
-         if(webServiceSucceeded == false)
+         delay(150);
+         if (! String(rtc.getYear()).equals("0"))
          {
-            Serial.println("retrying webservice call ");
-            azureHttpPost("{deviceId:NeshMKR100Dev1, motion:1,timestamp:" + getTimeStamp() + "}");
-            //httpRequest("POST", senduri,"text/plain","{deviceId:NeshMKR100Dev1, motion:1,timestamp:" + getTimeStamp() + "}");
+           timeStamp = getTimeStamp();
+           Serial.println(timeStamp);   
+           webServiceSucceeded = azureHttpPost("{deviceId:NeshMKR100Dev1, motion:1,timestamp:" + timeStamp + "}");
+           //webServiceSucceeded = httpRequest("POST", senduri,"text/plain","{deviceId:NeshMKR100Dev1, motion:1,timestamp:" + timeStamp + "}");
+           if(webServiceSucceeded == false)
+           {
+            delay(150);
+              Serial.println("retrying webservice call ");
+              azureHttpPost("{deviceId:NeshMKR100Dev1, motion:1,timestamp:" + timeStamp + "}");
+              //httpRequest("POST", senduri,"text/plain","{deviceId:NeshMKR100Dev1, motion:1,timestamp:" + timeStamp + "}");
+           }
+           else
+           {
+             delay(1000);//delay at least 1 sec to allow web service to finish
+           }
          }
     }
     
@@ -183,24 +205,36 @@ void loop(){
        if(!lockLow && millis() - lowIn > pause){  
            //makes sure this block of code is only executed again after a new motion sequence has been detected
            lockLow = true;        
-           duration = (millis() - pause)/1000;              
+           duration = (millis() - pause)/1000;   
+           Serial.println("---");           
            Serial.print("motion ended at ");      //output
            Serial.print(duration);
            Serial.println(" sec");    
-           delay(50);
-          webServiceSucceeded = azureHttpPost("{deviceId:NeshMKR100Dev1, motion:0,timestamp:" + getTimeStamp() + "}");
-          //webServiceSucceeded = httpRequest("POST", senduri,"text/plain","{deviceId:NeshMKR100Dev1, motion:0,timestamp:" + getTimeStamp() + "}");
-          if(webServiceSucceeded == false)
-         {
-            Serial.println("retrying webservice call ");
-            azureHttpPost("{deviceId:NeshMKR100Dev1, motion:0,timestamp:" + getTimeStamp() + "}");
-            //webServiceSucceeded = httpRequest("POST", senduri,"text/plain","{deviceId:NeshMKR100Dev1, motion:0,timestamp:" + getTimeStamp() + "}");
-         }
+           delay(150);
+           
+           if (! String(rtc.getYear()).equals("0"))
+           {
+             timeStamp = getTimeStamp();
+             Serial.println(timeStamp);
+             webServiceSucceeded = azureHttpPost("{deviceId:NeshMKR100Dev1, motion:0,timestamp:" + timeStamp + "}");
+             //webServiceSucceeded = httpRequest("POST", senduri,"text/plain","{deviceId:NeshMKR100Dev1, motion:0,timestamp:" + timeStamp + "}");
+             if(webServiceSucceeded == false)
+             {
+                delay(150);
+                Serial.println("retrying webservice call ");
+                azureHttpPost("{deviceId:NeshMKR100Dev1, motion:0,timestamp:" + timeStamp + "}");
+                //webServiceSucceeded = httpRequest("POST", senduri,"text/plain","{deviceId:NeshMKR100Dev1, motion:0,timestamp:" + timeStamp + "}");
+             }
+             else
+             {
+               delay(1000);//delay at least 1 sec to allow web service to finish
+             }    
+           }       
     }
   }
 
   /* ------Poling for Cloud-to-Device messages------*/
-  
+  delay(150);
   String response = "";
   char c;
   ///read response if WiFi Client is available
@@ -225,7 +259,7 @@ void loop(){
       String eTag=getHeaderValue(response,"ETag");
       Serial.print("Azure response received eTag: ");
       Serial.println(eTag);
-      String syncRTC = getResponsePayload(response); //E.g. SyncRTC: "2016-4-10T21:00"
+      String syncRTC = getResponsePayload(response); //E.g. SyncRTC:"2016-4-10T21:00"
       if ( syncRTC.startsWith("SyncRTC:"))
       {
         Serial.println(syncRTC);
@@ -263,13 +297,17 @@ void loop(){
 
 void reconnetWifi(){
     // attempt to connect to Wifi network:
-  while (status != WL_CONNECTED) {
-    status = WiFi.begin(ssid, pass);
-    Serial.println("wait 10 seconds for wifi connection:");
-    // wait 10 seconds for connection:
-    delay(10000);
-  }
-  Serial.println("wifi connection succeeded:");
+    bool reconnected = false;
+    while (status != WL_CONNECTED) {
+      status = WiFi.begin(ssid, pass);
+      Serial.println("wait 10 seconds for wifi re-connection:");
+      // wait 10 seconds for connection:
+      delay(10000);
+      reconnected = true;
+    }
+    if(reconnected ==true){
+      Serial.println("wifi re-connection succeeded:");
+    }
 }
 
 void syncRTC(byte year, byte month, byte day, byte hours, byte minutes, byte seconds){
@@ -286,8 +324,8 @@ String getTimeStamp(){
 
 void syncRTCReceived(String resp)
 {
-  //String resp = "SyncRTC: "2016-4-10T21:00";
-  int idxStart=12;  
+  //String resp = "SyncRTC:"2016-4-10T21:00";
+  int idxStart=10;  
   int idxEnd = resp.indexOf("-", idxStart);
   year = resp.substring(idxStart,idxEnd).toInt();  
 
@@ -401,12 +439,22 @@ bool httpRequest(String verb, String uri,String contentType, String content)
       {
           client.println();
       }
-
+      Serial.println("---"); 
+      Serial.println("service call to azure successful!");
+      Serial.println(verb);
+      Serial.println(uri); 
+      Serial.println(content);            
+      Serial.println("---"); 
       return true;
     }
   else {
     // if you couldn't make a connection:
+    Serial.println("---"); 
     Serial.println("connection to azure webservice failed");
+    Serial.println(verb);
+    Serial.println(uri);
+    Serial.println(content); 
+    Serial.println("---");    
     reconnetWifi();
     return false;
   }    
@@ -465,4 +513,3 @@ String getResponsePayload(String response)
 
   return response.substring(idxHdrEnd + 4);
 }
-
