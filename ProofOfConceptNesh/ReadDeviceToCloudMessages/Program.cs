@@ -9,7 +9,7 @@ namespace ReadDeviceToCloudMessages
 {
     class Program
     {
-        static string connectionString = "HostName=nesh.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=8ne9pP51E/a0UtwfUgRkY5u4dCBbqqMgBkjWDGACN5k=";
+        static string connectionString = "HostName=<your host name>;SharedAccessKeyName=<your access key name>;SharedAccessKey=<your access key value>";
         static string iotHubD2cEndpoint = "messages/events";
         static EventHubClient eventHubClient;
         static void Main(string[] args)
